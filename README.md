@@ -24,46 +24,46 @@ The system accepts natural-language travel requests and coordinates specialized 
 ## Architecture
 
 ```text
-				User
-					|
-					v
-				Streamlit Frontend
-					|
-					v
-				LangGraph
-					|
-					v
-				Supervisor Agent
-					|
-					+------------------+------------------+
-					|                  |                  |
-					v                  v                  v
-				Flight Agent      Hotel Agent      Weather Agent
-					|                  |                  |
-					v                  v                  v
-				AviationStack      Tavily MCP       Weather MCP
-				MCP
-					|                  |                  |
-					+------------------+------------------+
-														|
-														v
-											Budget Agent
-														|
-														v
-											Itinerary Agent
-														|
-														v
-											Human Approval
-												/       \
-										Approve     Revise
-												|          |
-												+----+-----+
-														|
-														v
-									Final Response Agent
-														|
-														v
-											Final Travel Plan
+                                User
+                                  |
+                                  v
+                        Streamlit Frontend
+                                  |
+                                  v
+                             LangGraph
+                                  |
+                                  v
+                         Supervisor Agent
+                                  |
+              +-------------------+-------------------+
+              |                   |                   |
+              v                   v                   v
+        Flight Agent        Hotel Agent        Weather Agent
+              |                   |                   |
+              v                   v                   v
+      AviationStack MCP       Tavily MCP        Weather MCP
+              |                   |                   |
+              +-------------------+-------------------+
+                                  |
+                                  v
+                            Budget Agent
+                                  |
+                                  v
+                          Itinerary Agent
+                                  |
+                                  v
+                          Human Approval
+                             /       \
+                        Approve     Revise
+                           |           |
+                           +-----+-----+
+                                 |
+                                 v
+                       Final Response Agent
+                                 |
+                                 v
+                         Final Travel Plan
+```
 
 ## Multi-Agent Workflow
 
@@ -143,24 +143,26 @@ The user can either approve the itinerary or provide feedback for revision.
 Approve:
 
 ```text
+Draft Itinerary
+      |
+      v
+Human Approval
+      |
+      v
+Final Response
+```
 
-				Draft Itinerary
-							|
-							v
-				Human Approval
-							|
-							v
-				Final Response
+Revise:
 
-				Revise:
-
-				Draft Itinerary
-							|
-							v
-				Human Feedback
-							|
-							v
-				Final Response
+```text
+Draft Itinerary
+      |
+      v
+Human Feedback
+      |
+      v
+Final Response
+```
 
 This allows the user to modify requirements such as budget, travel preferences, accommodation style, or other constraints before the final response is generated.
 
@@ -176,99 +178,114 @@ This project integrates multiple MCP servers.
 
 Transport:
 
+```text
 Streamable HTTP
+```
 
 The AI application connects to Tavily MCP through LangChain MCP adapters.
 
 ```text
-				AI Agent
-					|
-					v
-				LangChain MCP Adapter
-					|
-					v
-				Tavily MCP
-					|
-					v
-				Travel/Web Search
+AI Agent
+   |
+   v
+LangChain MCP Adapter
+   |
+   v
+Tavily MCP
+   |
+   v
+Travel/Web Search
+```
 
 ### AviationStack MCP
 
 Transport:
 
+```text
 stdio
+```
 
 AviationStack MCP is intentionally maintained as a separate external installation and is not included inside this repository.
 
 ```text
-				AI Agent
-					|
-					v
-				LangChain MCP Adapter
-					|
-					v
-				AviationStack MCP
-					|
-					v
-				AviationStack API
+AI Agent
+   |
+   v
+LangChain MCP Adapter
+   |
+   v
+AviationStack MCP
+   |
+   v
+AviationStack API
+```
 
 The path to the AviationStack MCP Python environment is configured through the environment variable:
 
+```text
 AVIATION_MCP_PYTHON
+```
 
 ### Custom Weather MCP
 
 Transport:
 
+```text
 stdio
+```
 
 The project contains:
 
+```text
 custom_weather_mcp_server.py
+```
 
 The server exposes:
 
-- get_current_weather
-- get_forecast
+- `get_current_weather`
+- `get_forecast`
 
 ```text
-				AI Agent
-					|
-					v
-				LangChain MCP Adapter
-					|
-					v
-				Custom Weather MCP
-					|
-					v
-				OpenWeather API
+AI Agent
+   |
+   v
+LangChain MCP Adapter
+   |
+   v
+Custom Weather MCP
+   |
+   v
+OpenWeather API
+```
 
 ## Project Structure
 
 ```text
-				Agentic_AI_Travel_Planner/
-				|
-				+-- agents.py
-				+-- graph.py
-				+-- state.py
-				+-- mcp_client.py
-				+-- config.py
-				+-- custom_weather_mcp_server.py
-				+-- frontend.py
-				|
-				+-- requirements.txt
-				+-- .env.example
-				+-- .gitignore
-				+-- README.md
+Agentic_AI_Travel_Planner/
+|
++-- agents.py
++-- graph.py
++-- state.py
++-- mcp_client.py
++-- config.py
++-- custom_weather_mcp_server.py
++-- frontend.py
+|
++-- requirements.txt
++-- .env.example
++-- .gitignore
++-- README.md
+```
 
 The AviationStack MCP installation remains outside the repository:
 
 ```text
-			MULTI_AGENT_SYSTEM_WITH_MCP/
-			|
-			+-- aviationstack-mcp/
-					|
-					+-- .venv/
+MULTI_AGENT_SYSTEM_WITH_MCP/
+|
++-- aviationstack-mcp/
+    |
+    +-- .venv/
+```
 
 The AviationStack MCP virtual environment is not committed to GitHub.
 
@@ -309,27 +326,37 @@ The AviationStack MCP virtual environment is not committed to GitHub.
 
 ### 1. Clone the repository
 
+```bash
 git clone https://github.com/naman-DA/Agentic_AI_Travel_Planner.git
 cd Agentic_AI_Travel_Planner
+```
 
 ### 2. Create a virtual environment
 
 Windows:
 
+```cmd
 python -m venv .venv
+```
 
 Activate:
 
+```cmd
 .venv\Scripts\activate
+```
 
 Linux/macOS:
 
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
+```
 
 ### 3. Install dependencies
 
+```bash
 pip install -r requirements.txt
+```
 
 ## AviationStack MCP Setup
 
@@ -337,20 +364,25 @@ AviationStack MCP is installed separately from this repository.
 
 The AI application connects to the existing AviationStack MCP installation through the environment variable:
 
+```text
 AVIATION_MCP_PYTHON
+```
 
 Example on Windows:
 
+```env
 AVIATION_MCP_PYTHON=C:\path\to\aviationstack-mcp\.venv\Scripts\python.exe
+```
 
 The AviationStack MCP environment should not be committed to GitHub.
 
 ## Environment Variables
 
-Create a local .env file using .env.example as a template.
+Create a local `.env` file using `.env.example` as a template.
 
 Example:
 
+```env
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=openai/gpt-oss-120b
 
@@ -361,8 +393,9 @@ OPENWEATHER_API_KEY=your_openweather_api_key
 DATABASE_URL=your_postgresql_connection_string
 
 AVIATION_MCP_PYTHON=path_to_aviationstack_mcp_python
+```
 
-Never commit .env to GitHub.
+Never commit `.env` to GitHub.
 
 ## PostgreSQL Checkpointing
 
@@ -370,9 +403,11 @@ The project uses LangGraph's PostgreSQL checkpointer for persistent graph state.
 
 Configure the database connection using:
 
+```env
 DATABASE_URL=your_postgresql_connection_string
+```
 
-When DATABASE_URL is available, the graph initializes the PostgreSQL checkpointer.
+When `DATABASE_URL` is available, the graph initializes the PostgreSQL checkpointer.
 
 This allows the application to maintain thread-based state and resume Human-in-the-Loop workflows.
 
@@ -380,16 +415,21 @@ This allows the application to maintain thread-based state and resume Human-in-t
 
 Activate the virtual environment:
 
+```cmd
 .venv\Scripts\activate
+```
 
 Run Streamlit:
 
+```cmd
 streamlit run frontend.py
+```
 
 The application will open in the browser.
 
 ## Example User Request
 
+```text
 Plan a 7-day trip to Japan from Delhi under ₹2 lakh.
 
 Preferences:
@@ -399,63 +439,65 @@ Preferences:
 - Local transportation
 - Popular attractions
 - Practical day-by-day itinerary
+```
 
 The supervisor analyzes the request and routes the work to the required specialist agents.
 
 ## Example Workflow
 
 ```text
-				User Request
-						|
-						v
-				Input Guardrail
-						|
-						v
-				Supervisor
-						|
-						+--> Flight Agent
-						|
-						+--> Hotel Agent
-						|
-						+--> Weather Agent
-						|
-						+--> Budget Agent
-						|
-						v
-				Itinerary Agent
-						|
-						v
-				Human Approval
-						|
-						+--> Approved
-						|       |
-						|       v
-						|   Final Response
-						|
-						+--> Feedback
-										|
-										v
-							Revised Response
+User Request
+     |
+     v
+Input Guardrail
+     |
+     v
+Supervisor
+     |
+     +--> Flight Agent
+     |
+     +--> Hotel Agent
+     |
+     +--> Weather Agent
+     |
+     +--> Budget Agent
+     |
+     v
+Itinerary Agent
+     |
+     v
+Human Approval
+     |
+     +--> Approved
+     |       |
+     |       v
+     |   Final Response
+     |
+     +--> Feedback
+             |
+             v
+       Revised Response
+```
 
 ## State Management
 
 The LangGraph state contains information including:
 
-- user_query
-- user_id
-- trip_constraints
-- selected_agents
-- supervisor_reasoning
-- flight_results
-- hotel_results
-- weather_results
-- budget_results
-- itinerary
-- approval_request
-- human_feedback
-- approved
-- final_response
-- llm_calls
+- `user_query`
+- `user_id`
+- `trip_constraints`
+- `selected_agents`
+- `supervisor_reasoning`
+- `flight_results`
+- `hotel_results`
+- `weather_results`
+- `budget_results`
+- `itinerary`
+- `approval_request`
+- `human_feedback`
+- `approved`
+- `final_response`
+- `llm_calls`
 
 PostgreSQL checkpointing allows this state to persist between interactions.
 
@@ -469,11 +511,15 @@ For example:
 
 Initial request:
 
+```text
 Plan a 7-day Japan trip under ₹2 lakh.
+```
 
 After reviewing the itinerary, the user can provide feedback such as:
 
+```text
 Increase the budget to ₹5 lakh and make the trip more premium.
+```
 
 The system can then use the human feedback to generate the revised final travel plan.
 
@@ -495,15 +541,15 @@ The project follows production-oriented design principles:
 
 Do not commit:
 
-- .env
+- `.env`
 - API keys
 - PostgreSQL credentials
 - Virtual environments
 - MCP virtual environments
-- node_modules
+- `node_modules`
 - Python cache files
 
-The repository includes a .gitignore to prevent these files from being committed.
+The repository includes a `.gitignore` to prevent these files from being committed.
 
 ## Current MCP Connections
 
@@ -546,29 +592,30 @@ The application can generate a complete travel plan containing:
 This project demonstrates practical implementation of:
 
 ```text
-				LLM
-				|
-				+-- Agentic AI
-				|
-				+-- Multi-Agent Orchestration
-				|
-				+-- LangGraph
-				|
-				+-- MCP
-				|     |
-				|     +-- Streamable HTTP
-				|     |
-				|     +-- stdio
-				|
-				+-- Tool Calling
-				|
-				+-- Human-in-the-Loop
-				|
-				+-- Persistent State
-				|
-				+-- PostgreSQL Checkpointing
-				|
-				+-- External API Integration
+LLM
+ |
+ +-- Agentic AI
+ |
+ +-- Multi-Agent Orchestration
+ |
+ +-- LangGraph
+ |
+ +-- MCP
+ |    |
+ |    +-- Streamable HTTP
+ |    |
+ |    +-- stdio
+ |
+ +-- Tool Calling
+ |
+ +-- Human-in-the-Loop
+ |
+ +-- Persistent State
+ |
+ +-- PostgreSQL Checkpointing
+ |
+ +-- External API Integration
+```
 
 ## Future Improvements
 
@@ -587,7 +634,7 @@ This project demonstrates practical implementation of:
 
 ## Author
 
-Naman Garg
+**Naman Garg**
 
 B.Tech - Computer Science Engineering
 
