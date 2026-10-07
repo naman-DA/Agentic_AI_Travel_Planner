@@ -16,13 +16,6 @@ from config import (
 
 BASE_DIR = Path(__file__).resolve().parent
 
-AVIATION_MCP_PYTHON = os.getenv("AVIATION_MCP_PYTHON")
-
-if not AVIATION_MCP_PYTHON:
-    raise RuntimeError(
-        "AVIATION_MCP_PYTHON is not set in .env"
-    )
-
 WEATHER_SERVER = BASE_DIR / "custom_weather_mcp_server.py"
 
 client = MultiServerMCPClient(
@@ -34,7 +27,7 @@ client = MultiServerMCPClient(
 
         "aviationstack": {
             "transport": "stdio",
-            "command": AVIATION_MCP_PYTHON,
+            "command": os.sys.executable,
             "args": [
                 "-m",
                 "aviationstack_mcp",
