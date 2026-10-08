@@ -4,7 +4,7 @@ langchain-groq
 langchain-mcp-adapters
 langgraph
 langgraph-checkpoint-postgres
-psycopg[binary]
+psycopg[binary,pool]
 mcp
 python-dotenv
 streamlit
