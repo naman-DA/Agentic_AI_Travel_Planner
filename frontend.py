@@ -65,17 +65,18 @@ if result:
     st.write(result.get("supervisor_reasoning", ""))
     st.write("Selected agents:", result.get("selected_agents", []))
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Flight")
-        st.markdown(result.get("flight_results", ""))
-        st.subheader("Weather")
-        st.markdown(result.get("weather_results", ""))
-    with col2:
-        st.subheader("Hotels")
-        st.markdown(result.get("hotel_results", ""))
-        st.subheader("Budget")
-        st.markdown(result.get("budget_results", ""))
+    with st.expander("Research Results", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Flight")
+            st.markdown(result.get("flight_results", ""))
+            st.subheader("Weather")
+            st.markdown(result.get("weather_results", ""))
+        with col2:
+            st.subheader("Hotels")
+            st.markdown(result.get("hotel_results", ""))
+            st.subheader("Budget")
+            st.markdown(result.get("budget_results", ""))
 
     st.subheader("Draft Itinerary")
     if "__interrupt__" in result:

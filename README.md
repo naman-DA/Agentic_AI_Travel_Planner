@@ -1,643 +1,864 @@
-# Agentic AI Travel Planner
+# 🌍 Real-World Multi-Agent AI Travel Planner
 
-A real-world multi-agent travel planning system built with Python, LangGraph, LangChain, MCP, Groq, PostgreSQL, and Streamlit.
+An Agentic AI Travel Planner built with Python, LangGraph, MCP, Groq, PostgreSQL, and Streamlit.
 
-The system accepts natural-language travel requests and coordinates specialized AI agents for flights, hotels, weather, budgeting, and itinerary generation. It uses Model Context Protocol (MCP) to connect agents with external tools and supports PostgreSQL checkpointing, multi-turn state management, and Human-in-the-Loop approval.
+The system accepts a natural-language travel request, intelligently selects the required specialist agents, gathers travel information, creates a draft itinerary, pauses for Human-in-the-Loop (HITL) approval, and then generates a polished final travel plan.
 
-## Features
+## 🚀 Live Demo
 
-- Multi-agent travel planning with LangGraph
-- Supervisor-based agent routing
-- Flight information through AviationStack MCP
-- Hotel and travel research through Tavily MCP
-- Current weather and forecast through custom Weather MCP
-- Budget analysis and feasibility assessment
-- Day-by-day itinerary generation
-- Human-in-the-Loop itinerary approval
-- Itinerary revision based on human feedback
-- PostgreSQL checkpointing for persistent LangGraph state
-- Thread-based multi-turn conversations
-- Groq LLM integration
-- Streamlit interactive frontend
-- MCP integration using stdio and Streamable HTTP
+https://agenticaitravelplanner-29kyqdhdshibacjkcdxyuy.streamlit.app/
 
-## Architecture
+## 📌 Project Overview
 
-```text
-                                User
-                                  |
-                                  v
-                        Streamlit Frontend
-                                  |
-                                  v
-                             LangGraph
-                                  |
-                                  v
-                         Supervisor Agent
-                                  |
-              +-------------------+-------------------+
-              |                   |                   |
-              v                   v                   v
-        Flight Agent        Hotel Agent        Weather Agent
-              |                   |                   |
-              v                   v                   v
-      AviationStack MCP       Tavily MCP        Weather MCP
-              |                   |                   |
-              +-------------------+-------------------+
-                                  |
-                                  v
-                            Budget Agent
-                                  |
-                                  v
-                          Itinerary Agent
-                                  |
-                                  v
-                          Human Approval
-                             /       \
-                        Approve     Revise
-                           |           |
-                           +-----+-----+
-                                 |
-                                 v
-                       Final Response Agent
-                                 |
-                                 v
-                         Final Travel Plan
-```
+Traditional travel planning requires users to manually search for flights, hotels, weather, transportation, activities, and budget information.
 
-## Multi-Agent Workflow
+This project automates that workflow using a multi-agent architecture.
 
-### 1. Supervisor Agent
+The user provides a natural-language request such as:
 
-The supervisor receives the user's travel request and determines which specialist agents are required.
+> Plan a 7-day Japan trip under ₹2 lakh. Prefer budget hotels and avoid overnight travel.
 
-It extracts travel constraints such as:
+The system then:
 
-- Destination
-- Origin
-- Duration
-- Budget
-- Travel style
-- Special preferences
+1. Understands the user's requirements.
+2. Determines which specialist agents are required.
+3. Searches for relevant flight information.
+4. Searches for hotel and accommodation options.
+5. Retrieves weather information when requested.
+6. Calculates and evaluates the travel budget.
+7. Creates a day-by-day draft itinerary.
+8. Pauses for human approval.
+9. Revises the itinerary when feedback is provided.
+10. Generates the final polished travel plan.
 
-It then routes the request to the appropriate specialist agents.
+---
 
-### 2. Flight Agent
-
-The Flight Agent uses the AviationStack MCP server to access aviation-related tools.
-
-It can work with information such as:
-
-- Airports
-- Airlines
-- Aviation-related data
-
-The agent is instructed not to fabricate live flight availability or prices when the external API does not provide them.
-
-### 3. Hotel Agent
-
-The Hotel Agent uses Tavily MCP to research:
-
-- Hotels
-- Areas to stay
-- Accommodation options
-- Travel-related information
-
-### 4. Weather Agent
-
-The Weather Agent uses the custom Weather MCP server to retrieve:
-
-- Current weather
-- Temperature
-- Feels-like temperature
-- Humidity
-- Weather condition
-- Wind speed
-- Forecast information
-
-### 5. Budget Agent
-
-The Budget Agent analyzes the collected travel information and generates:
-
-- Estimated cost categories
-- Budget feasibility
-- Risk areas
-- Money-saving suggestions
-
-### 6. Itinerary Agent
-
-The Itinerary Agent combines the specialist-agent outputs and generates a practical day-by-day travel itinerary containing:
-
-- Accommodation
-- Transportation
-- Activities
-- Budget considerations
-- Daily schedule
-
-### 7. Human-in-the-Loop
-
-The generated itinerary is paused for human approval using LangGraph's interrupt mechanism.
-
-The user can either approve the itinerary or provide feedback for revision.
-
-Approve:
+# 🏗️ Architecture
 
 ```text
-Draft Itinerary
-      |
-      v
-Human Approval
-      |
-      v
-Final Response
+                         ┌──────────────────────┐
+                         │      User Request    │
+                         │  Natural Language    │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │ Guardrail / Supervisor│
+                         │                      │
+                         │ Intent + Agent       │
+                         │ Selection            │
+                         └──────────┬───────────┘
+                                    │
+              ┌─────────────────────┼─────────────────────┐
+              │                     │                     │
+              ▼                     ▼                     ▼
+       ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+       │ Flight Agent│       │ Hotel Agent │       │Weather Agent│
+       └──────┬──────┘       └──────┬──────┘       └──────┬──────┘
+              │                     │                     │
+              └─────────────────────┼─────────────────────┘
+                                    │
+                              ┌─────▼─────┐
+                              │Budget Agent│
+                              └─────┬─────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │   Itinerary Agent    │
+                         │                      │
+                         │ Draft Day-by-Day Plan│
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │ Human-in-the-Loop    │
+                         │      Approval        │
+                         └──────────┬───────────┘
+                                    │
+                       ┌────────────┴────────────┐
+                       │                         │
+                    Approved                  Revise
+                       │                         │
+                       │                    User Feedback
+                       │                         │
+                       └────────────┬────────────┘
+                                    ▼
+                         ┌──────────────────────┐
+                         │  Final Response Agent│
+                         │                      │
+                         │ Polished Travel Plan │
+                         └──────────────────────┘
 ```
 
-Revise:
+---
 
-```text
-Draft Itinerary
-      |
-      v
-Human Feedback
-      |
-      v
-Final Response
-```
+# ✨ Key Features
 
-This allows the user to modify requirements such as budget, travel preferences, accommodation style, or other constraints before the final response is generated.
+- 🤖 Multi-agent travel planning
+- 🧠 LangGraph-based agent orchestration
+- 🔀 Dynamic agent selection based on user requirements
+- ✈️ Flight information retrieval
+- 🏨 Hotel and accommodation research
+- 🌦️ Weather and forecast integration
+- 💰 Travel budget estimation
+- 🗺️ Day-by-day itinerary generation
+- 👤 Human-in-the-Loop approval
+- 🔄 Itinerary revision using human feedback
+- 🧠 Persistent LangGraph state and checkpointing
+- 🗄️ PostgreSQL checkpoint database
+- 🔌 MCP-based external tool integration
+- ⚡ Groq-powered LLM inference
+- 🛡️ Rate-limit retry handling
+- 🖥️ Streamlit user interface
+- ☁️ Streamlit Cloud deployment
+- 🔐 Environment and secrets-based API configuration
 
-### 8. Final Response Agent
+---
 
-The Final Response Agent generates the final user-ready travel plan using the approved itinerary and human feedback.
+# 🛠️ Tech Stack
 
-## MCP Architecture
-
-This project integrates multiple MCP servers.
-
-### Tavily MCP
-
-Transport:
-
-```text
-Streamable HTTP
-```
-
-The AI application connects to Tavily MCP through LangChain MCP adapters.
-
-```text
-AI Agent
-   |
-   v
-LangChain MCP Adapter
-   |
-   v
-Tavily MCP
-   |
-   v
-Travel/Web Search
-```
-
-### AviationStack MCP
-
-Transport:
-
-```text
-stdio
-```
-
-AviationStack MCP is intentionally maintained as a separate external installation and is not included inside this repository.
-
-```text
-AI Agent
-   |
-   v
-LangChain MCP Adapter
-   |
-   v
-AviationStack MCP
-   |
-   v
-AviationStack API
-```
-
-The path to the AviationStack MCP Python environment is configured through the environment variable:
-
-```text
-AVIATION_MCP_PYTHON
-```
-
-### Custom Weather MCP
-
-Transport:
-
-```text
-stdio
-```
-
-The project contains:
-
-```text
-custom_weather_mcp_server.py
-```
-
-The server exposes:
-
-- `get_current_weather`
-- `get_forecast`
-
-```text
-AI Agent
-   |
-   v
-LangChain MCP Adapter
-   |
-   v
-Custom Weather MCP
-   |
-   v
-OpenWeather API
-```
-
-## Project Structure
-
-```text
-Agentic_AI_Travel_Planner/
-|
-+-- agents.py
-+-- graph.py
-+-- state.py
-+-- mcp_client.py
-+-- config.py
-+-- custom_weather_mcp_server.py
-+-- frontend.py
-|
-+-- requirements.txt
-+-- .env.example
-+-- .gitignore
-+-- README.md
-```
-
-The AviationStack MCP installation remains outside the repository:
-
-```text
-MULTI_AGENT_SYSTEM_WITH_MCP/
-|
-+-- aviationstack-mcp/
-    |
-    +-- .venv/
-```
-
-The AviationStack MCP virtual environment is not committed to GitHub.
-
-## Tech Stack
-
-### AI / Agentic AI
+## Programming Language
 
 - Python
-- LangGraph
-- LangChain
+
+## AI / LLM
+
 - Groq
-- LangChain MCP Adapters
+- `openai/gpt-oss-20b`
+- LangChain
+- LangGraph
+
+## Agent Orchestration
+
+- LangGraph
+- Multi-agent workflow
+- Supervisor-based routing
+- Human-in-the-Loop interrupts
+
+## MCP
+
 - Model Context Protocol (MCP)
-
-### MCP
-
-- Tavily MCP
-- AviationStack MCP
 - Custom Weather MCP
+- MCP communication through supported transport mechanisms
 
-### Database
+## Database
 
 - PostgreSQL
 - LangGraph PostgreSQL Checkpointer
-- psycopg
+- Neon PostgreSQL
 
-### Frontend
+## External APIs / Tools
+
+- AviationStack
+- Tavily
+- OpenWeather
+- Custom MCP tools
+
+## Frontend
 
 - Streamlit
 
-### External APIs
+## Development
 
-- Tavily
-- AviationStack
-- OpenWeather
+- Git
+- GitHub
+- Python virtual environment
+- python-dotenv
 
-## Installation
+---
 
-### 1. Clone the repository
+# 🧠 Agent Architecture
+
+The application separates responsibilities across specialized agents.
+
+## 1. Supervisor / Guardrail Agent
+
+The Supervisor analyzes the user's travel request and determines which agents are required.
+
+For example:
+
+```text
+User:
+"Plan a 7-day Japan trip under ₹2 lakh.
+Prefer budget hotels and avoid overnight travel."
+
+Supervisor:
+- Flight Agent
+- Hotel Agent
+- Budget Agent
+- Itinerary Agent
+```
+
+If weather is not requested or required, the Weather Agent can be skipped.
+
+This prevents unnecessary tool calls and keeps the workflow efficient.
+
+---
+
+## 2. Flight Agent
+
+The Flight Agent retrieves flight-related information using the configured flight API or tool.
+
+It focuses on:
+
+- Origin and destination
+- Travel dates
+- Flight options
+- Travel constraints
+- Estimated prices when available
+- Overnight-travel preferences
+
+The agent passes useful information to the downstream itinerary workflow.
+
+---
+
+## 3. Hotel Agent
+
+The Hotel Agent searches for accommodation information using the configured search tools.
+
+It considers:
+
+- Destination
+- Budget
+- Preferred hotel type
+- Location
+- Accommodation options
+- Available pricing information
+
+Raw search results are cleaned and formatted before being presented to the user.
+
+---
+
+## 4. Weather Agent
+
+The Weather Agent is invoked when weather information is relevant to the request.
+
+It retrieves:
+
+- Current weather
+- Forecast information
+- Practical travel and packing considerations
+
+Weather data is obtained through the configured weather MCP integration.
+
+---
+
+## 5. Budget Agent
+
+The Budget Agent evaluates the available travel information and produces a budget-oriented summary.
+
+It considers categories such as:
+
+```text
+Flights
+Accommodation
+Transportation
+Food
+Activities
+Miscellaneous expenses
+```
+
+The agent also checks the estimated cost against the user's stated budget.
+
+---
+
+## 6. Itinerary Agent
+
+The Itinerary Agent combines the available information from the specialist agents.
+
+It receives:
+
+```text
+User Request
+Trip Constraints
+Flight Information
+Hotel Information
+Weather Information
+Budget Information
+```
+
+It then generates a concise draft itinerary.
+
+The draft intentionally uses a simple day-by-day format so that it is easy for a human to review.
+
+Example:
+
+```text
+Day 1 – Arrival
+
+• Flight information
+• Airport transfer
+• Accommodation
+• Evening activity
+
+Day 2 – City Exploration
+
+• Morning activity
+• Afternoon activity
+• Evening activity
+```
+
+---
+
+# 👤 Human-in-the-Loop
+
+One of the key features of the project is the Human-in-the-Loop workflow.
+
+After generating the draft itinerary, LangGraph pauses execution using an interrupt.
+
+The user can select:
+
+```text
+Yes
+```
+
+or:
+
+```text
+No, revise it
+```
+
+If the user approves:
+
+```text
+Draft Itinerary
+      ↓
+Human Approval
+      ↓
+Final Response
+```
+
+If the user rejects the draft:
+
+```text
+Draft Itinerary
+      ↓
+Human Feedback
+      ↓
+Final Response Agent
+      ↓
+Revised Travel Plan
+```
+
+This prevents the system from automatically finalizing a plan without human review.
+
+---
+
+# 🧠 LangGraph Workflow
+
+The workflow is implemented using LangGraph.
+
+Conceptually:
+
+```text
+START
+  ↓
+Supervisor / Guardrail
+  ↓
+Dynamic Agent Selection
+  ↓
+Specialist Agents
+  ↓
+Itinerary Agent
+  ↓
+Human Approval Interrupt
+  ↓
+Final Response Agent
+  ↓
+END
+```
+
+The workflow maintains state across the different agents.
+
+---
+
+# 💾 PostgreSQL Checkpointing
+
+The project uses PostgreSQL for LangGraph checkpoint persistence.
+
+This allows the application to maintain state using a conversation or thread identifier.
+
+The application uses:
+
+```text
+PostgreSQL
+     ↓
+LangGraph PostgresSaver
+     ↓
+Thread-based state persistence
+```
+
+The PostgreSQL database is hosted using Neon PostgreSQL.
+
+A thread ID is generated for each session:
+
+```text
+demo_user_<unique_id>
+```
+
+This allows LangGraph to resume the workflow when required, especially during Human-in-the-Loop execution.
+
+---
+
+# 🔌 MCP Integration
+
+The project demonstrates the use of Model Context Protocol (MCP) for external tool integration.
+
+The weather functionality is exposed through a custom MCP server.
+
+The architecture separates:
+
+```text
+Agent
+  ↓
+MCP Client
+  ↓
+MCP Tool
+  ↓
+External API
+```
+
+This keeps external service access separated from the agent's core reasoning logic.
+
+---
+
+# 🔐 Environment Variables
+
+Create a `.env` file locally.
+
+Example:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=openai/gpt-oss-20b
+TAVILY_API_KEY=your_tavily_api_key
+AVIATIONSTACK_API_KEY=your_aviationstack_api_key
+OPENWEATHER_API_KEY=your_openweather_api_key
+DATABASE_URL=your_postgresql_connection_string
+```
+
+Never commit API keys or database credentials to GitHub.
+
+---
+
+# 📁 Project Structure
+
+```text
+Agentic_AI_Travel_Planner/
+│
+├── agents.py
+├── graph.py
+├── frontend.py
+├── config.py
+├── requirements.txt
+├── .env
+├── .gitignore
+└── README.md
+```
+
+### Main Files
+
+### `agents.py`
+
+Contains the main specialist agents and LLM-powered processing:
+
+```text
+Supervisor
+Flight Agent
+Hotel Agent
+Weather Agent
+Budget Agent
+Itinerary Agent
+Human Approval
+Final Response Agent
+```
+
+### `graph.py`
+
+Defines the LangGraph workflow and PostgreSQL checkpointer.
+
+### `frontend.py`
+
+Contains the Streamlit application and user interface.
+
+### `config.py`
+
+Handles configuration, environment variables, Streamlit secrets, and Groq LLM initialization.
+
+---
+
+# ⚙️ Local Setup
+
+## 1. Clone the repository
 
 ```bash
 git clone https://github.com/naman-DA/Agentic_AI_Travel_Planner.git
 cd Agentic_AI_Travel_Planner
 ```
 
-### 2. Create a virtual environment
+## 2. Create a virtual environment
 
-Windows:
+### Windows
 
-```cmd
+```bash
 python -m venv .venv
 ```
 
 Activate:
 
-```cmd
+```bash
 .venv\Scripts\activate
 ```
 
-Linux/macOS:
+### Linux/macOS
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+## 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## AviationStack MCP Setup
+## 4. Configure environment variables
 
-AviationStack MCP is installed separately from this repository.
-
-The AI application connects to the existing AviationStack MCP installation through the environment variable:
+Create:
 
 ```text
-AVIATION_MCP_PYTHON
+.env
 ```
 
-Example on Windows:
+and add the required API keys and PostgreSQL connection string.
 
-```env
-AVIATION_MCP_PYTHON=C:\path\to\aviationstack-mcp\.venv\Scripts\python.exe
-```
+## 5. Run the application
 
-The AviationStack MCP environment should not be committed to GitHub.
-
-## Environment Variables
-
-Create a local `.env` file using `.env.example` as a template.
-
-Example:
-
-```env
-GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=openai/gpt-oss-120b
-
-TAVILY_API_KEY=your_tavily_api_key
-AVIATIONSTACK_API_KEY=your_aviationstack_api_key
-OPENWEATHER_API_KEY=your_openweather_api_key
-
-DATABASE_URL=your_postgresql_connection_string
-
-AVIATION_MCP_PYTHON=path_to_aviationstack_mcp_python
-```
-
-Never commit `.env` to GitHub.
-
-## PostgreSQL Checkpointing
-
-The project uses LangGraph's PostgreSQL checkpointer for persistent graph state.
-
-Configure the database connection using:
-
-```env
-DATABASE_URL=your_postgresql_connection_string
-```
-
-When `DATABASE_URL` is available, the graph initializes the PostgreSQL checkpointer.
-
-This allows the application to maintain thread-based state and resume Human-in-the-Loop workflows.
-
-## Running the Application
-
-Activate the virtual environment:
-
-```cmd
-.venv\Scripts\activate
-```
-
-Run Streamlit:
-
-```cmd
+```bash
 streamlit run frontend.py
 ```
 
-The application will open in the browser.
-
-## Example User Request
+The application will start locally at:
 
 ```text
-Plan a 7-day trip to Japan from Delhi under ₹2 lakh.
-
-Preferences:
-
-- Budget hotels
-- No overnight flights
-- Local transportation
-- Popular attractions
-- Practical day-by-day itinerary
+http://localhost:8501
 ```
 
-The supervisor analyzes the request and routes the work to the required specialist agents.
+---
 
-## Example Workflow
+# ☁️ Streamlit Deployment
+
+The project can be deployed using Streamlit Cloud.
+
+Connect the GitHub repository and configure the required secrets.
+
+Example Streamlit secrets:
+
+```toml
+GROQ_API_KEY = "your_groq_api_key"
+GROQ_MODEL = "openai/gpt-oss-20b"
+TAVILY_API_KEY = "your_tavily_api_key"
+AVIATIONSTACK_API_KEY = "your_aviationstack_api_key"
+OPENWEATHER_API_KEY = "your_openweather_api_key"
+DATABASE_URL = "your_postgresql_connection_string"
+```
+
+Do not commit these secrets to GitHub.
+
+---
+
+# 🛡️ Rate-Limit Handling
+
+The application includes retry handling for Groq rate-limit errors.
+
+The LLM utility retries temporary `RateLimitError` failures with increasing delays.
+
+Conceptually:
 
 ```text
-User Request
-     |
-     v
-Input Guardrail
-     |
-     v
-Supervisor
-     |
-     +--> Flight Agent
-     |
-     +--> Hotel Agent
-     |
-     +--> Weather Agent
-     |
-     +--> Budget Agent
-     |
-     v
-Itinerary Agent
-     |
-     v
-Human Approval
-     |
-     +--> Approved
-     |       |
-     |       v
-     |   Final Response
-     |
-     +--> Feedback
-             |
-             v
-       Revised Response
+LLM Request
+    ↓
+429 Rate Limit?
+    │
+    ├── No → Continue
+    │
+    └── Yes
+          ↓
+        Wait
+          ↓
+        Retry
+          ↓
+        Retry
+          ↓
+    Continue / Raise
 ```
 
-## State Management
+The project also uses a smaller context window for downstream itinerary generation to reduce unnecessary token consumption.
 
-The LangGraph state contains information including:
+---
 
-- `user_query`
-- `user_id`
-- `trip_constraints`
-- `selected_agents`
-- `supervisor_reasoning`
-- `flight_results`
-- `hotel_results`
-- `weather_results`
-- `budget_results`
-- `itinerary`
-- `approval_request`
-- `human_feedback`
-- `approved`
-- `final_response`
-- `llm_calls`
+# 🎯 Example User Requests
 
-PostgreSQL checkpointing allows this state to persist between interactions.
-
-## Human-in-the-Loop Example
-
-The system first generates a draft itinerary.
-
-The user can then review the draft and provide feedback.
-
-For example:
-
-Initial request:
+### Example 1
 
 ```text
 Plan a 7-day Japan trip under ₹2 lakh.
+Prefer budget hotels and avoid overnight travel.
 ```
 
-After reviewing the itinerary, the user can provide feedback such as:
+### Example 2
 
 ```text
-Increase the budget to ₹5 lakh and make the trip more premium.
+Plan a 5-day trip to New Zealand with budget accommodation
+and include weather information.
 ```
 
-The system can then use the human feedback to generate the revised final travel plan.
+### Example 3
 
-## Design Principles
+```text
+Plan a budget trip to Japan.
+I want cultural attractions, affordable hotels,
+and minimal long-distance travel.
+```
 
-The project follows production-oriented design principles:
+The Supervisor determines which specialist agents are necessary for each request.
 
-- Agents focus on reasoning and orchestration.
-- External services are accessed through tools and MCP.
-- API credentials are stored in environment variables.
-- MCP servers are separated from core agent logic.
-- Graph state is explicitly defined.
-- Human approval is implemented using LangGraph interrupts.
-- PostgreSQL is used for persistent graph state.
-- Live information is not fabricated when external tools cannot provide it.
-- MCP server installations can remain independent from the main application.
+---
 
-## Security
+# 🔄 Example Workflow
 
-Do not commit:
+For:
 
-- `.env`
-- API keys
-- PostgreSQL credentials
-- Virtual environments
-- MCP virtual environments
-- `node_modules`
-- Python cache files
+```text
+Plan a 7-day Japan trip under ₹2 lakh.
+Prefer budget hotels and avoid overnight travel.
+```
 
-The repository includes a `.gitignore` to prevent these files from being committed.
+The system can produce:
 
-## Current MCP Connections
+```text
+User Request
+     ↓
+Supervisor
+     ↓
+Flight Agent
+     ↓
+Hotel Agent
+     ↓
+Budget Agent
+     ↓
+Itinerary Agent
+     ↓
+Human Approval
+     ↓
+Final Travel Plan
+```
 
-The project currently uses:
+If weather is explicitly requested:
 
-1. Tavily MCP
-   - Transport: Streamable HTTP
-   - Purpose: Web/travel research
+```text
+User Request
+     ↓
+Supervisor
+     ↓
+Flight ─┐
+Hotel ─┤
+Weather ├──→ Itinerary
+Budget ─┘
+             ↓
+       Human Approval
+             ↓
+       Final Response
+```
 
-2. AviationStack MCP
-   - Transport: stdio
-   - Purpose: Aviation information
-   - Installation: External
+---
 
-3. Custom Weather MCP
-   - Transport: stdio
-   - Purpose: Current weather and forecast
-   - API: OpenWeather
+# 👤 User Interface
 
-## Example Output
+The Streamlit interface provides:
 
-The application can generate a complete travel plan containing:
-
+- User/session management
+- Thread ID
+- Travel request input
 - Supervisor reasoning
 - Selected agents
-- Flight guidance
-- Hotel research
-- Current weather
-- Forecast
-- Budget assessment
-- Risk areas
-- Money-saving suggestions
-- Day-by-day itinerary
-- Transportation recommendations
-- Booking guidance
-- Final approved travel plan
+- Research Results
+- Draft Itinerary
+- Human Approval
+- Feedback input
+- Final Travel Plan
 
-## Project Highlights
+Intermediate research results can be expanded when required, while the main interface focuses on the draft and final plan.
 
-This project demonstrates practical implementation of:
+---
+
+# 🧪 Testing
+
+The project has been tested with travel requests involving:
+
+- Japan
+- New Zealand
+- Different trip durations
+- Budget constraints
+- Hotel preferences
+- Overnight-travel constraints
+- Requests with and without weather requirements
+
+The workflow supports dynamic agent selection based on the user's request.
+
+---
+
+# 🔒 Security Considerations
+
+The following files and data should never be committed:
+
+```text
+.env
+.venv/
+__pycache__/
+.streamlit/secrets.toml
+API keys
+Database credentials
+Private tokens
+```
+
+Recommended `.gitignore` entries:
+
+```gitignore
+.env
+.venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+```
+
+---
+
+# 🚧 Current Limitations
+
+The current system is primarily a travel research and itinerary planning system.
+
+It does not directly complete real-world bookings.
+
+External services may also impose:
+
+- API limits
+- Rate limits
+- Availability restrictions
+- Pricing changes
+- Incomplete search results
+
+Therefore, generated prices and availability should be treated as estimates unless confirmed by the respective provider.
+
+---
+
+# 🔮 Future Improvements
+
+Potential future improvements include:
+
+- Real flight booking integration
+- Hotel booking integration
+- Restaurant recommendations and reservations
+- More travel providers
+- User authentication
+- Persistent user profiles
+- Long-term travel preferences
+- Streaming agent responses
+- More advanced itinerary optimization
+- Cost optimization algorithms
+- Map integration
+- Real-time price tracking
+- Notification and alert system
+- Redis-based caching
+- Production monitoring
+- More MCP tools
+- Multi-destination optimization
+
+---
+
+# 📊 Why This Project?
+
+This project demonstrates practical implementation of modern Generative AI concepts:
+
+- LLM applications
+- Agentic AI
+- Multi-agent orchestration
+- LangGraph
+- LangChain
+- MCP
+- Tool calling
+- External API integration
+- Human-in-the-Loop
+- State persistence
+- PostgreSQL
+- Prompt engineering
+- Streamlit deployment
+- Error handling
+- Rate-limit management
+
+Rather than building a simple chatbot, the project demonstrates how multiple specialized AI components can collaborate to solve a real-world planning problem.
+
+---
+
+# 💡 Key Learning Outcomes
+
+Through this project, I worked with:
 
 ```text
 LLM
- |
- +-- Agentic AI
- |
- +-- Multi-Agent Orchestration
- |
- +-- LangGraph
- |
- +-- MCP
- |    |
- |    +-- Streamable HTTP
- |    |
- |    +-- stdio
- |
- +-- Tool Calling
- |
- +-- Human-in-the-Loop
- |
- +-- Persistent State
- |
- +-- PostgreSQL Checkpointing
- |
- +-- External API Integration
+ ↓
+Prompt Engineering
+ ↓
+Agent
+ ↓
+Tool Calling
+ ↓
+MCP
+ ↓
+Multi-Agent Orchestration
+ ↓
+LangGraph State Management
+ ↓
+Human-in-the-Loop
+ ↓
+PostgreSQL Checkpointing
+ ↓
+Streamlit Deployment
 ```
 
-## Future Improvements
+The project provided practical experience in designing an AI system where the LLM is not responsible for the entire application logic, but instead operates within a controlled workflow with specialized tools, state management, validation, and human supervision.
 
-- Flight booking integration
-- Hotel booking integration
-- User authentication
-- Persistent user profiles
-- Redis caching
-- Production API layer
-- Docker deployment
-- Cloud deployment
-- Streaming agent responses
-- Additional travel MCP servers
-- Automatic PDF itinerary generation
-- Additional travel providers
+---
 
-## Author
+# 👨‍💻 Author
 
 **Naman Garg**
 
-B.Tech - Computer Science Engineering
+B.Tech Computer Science
 
 GitHub: https://github.com/naman-DA
 
-LinkedIn: https://www.linkedin.com/in/naman-garg-16672b327/
+LinkedIn: https://linkedin.com/in/naman-garg-16672b327
+
+---
+
+# ⭐ Project Highlights
+
+```text
+✓ Multi-Agent AI Travel Planner
+✓ LangGraph orchestration
+✓ MCP integration
+✓ Groq LLM
+✓ Dynamic agent selection
+✓ Flight research
+✓ Hotel research
+✓ Weather integration
+✓ Budget planning
+✓ Itinerary generation
+✓ Human-in-the-Loop
+✓ PostgreSQL checkpointing
+✓ Streamlit UI
+✓ Cloud deployment
+✓ Rate-limit handling
+```
